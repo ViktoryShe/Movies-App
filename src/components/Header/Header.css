@@ -1,0 +1,30 @@
+.Header {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.tabs {
+  display: flex;
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.tab.active {
+  border-bottom: 2px solid #2196F3;
+  color: #2196F3;
+}
+
+.search-bar {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 50vw;
+  margin-top: 20px;
+}
