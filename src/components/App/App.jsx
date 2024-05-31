@@ -1,49 +1,106 @@
 import React, { Component } from 'react'
 import { Offline, Online } from 'react-detect-offline'
+import debounce from 'lodash.debounce'
 import './App.css'
 
 import Header from '../Header/Header'
 import CardList from '../CardList/CardList'
 import Footer from '../Footer/Footer'
-import { fetchMovies } from '../../utils/api'
-import Spin from '../Spin/Spin'
+import { fetchMovies, fetchRandomMovies } from '../../utils/api'
+import Spinner from '../Spin/Spin'
 import ErrorComponent from '../Error/Error'
+import NoResults from '../NoResults/NoResults'
+import OfflineMessage from '../OfflineMessage/OfflineMessage'
 
 export default class App extends Component {
   state = {
     films: [],
-    loading: true,
+    loading: false,
     error: false,
+    query: '',
+    totalResults: 0,
+    currentPage: 1,
   }
 
-  async componentDidMount() {
+  componentDidMount() {
+    this.loadRandomMovies()
+  }
+
+  loadRandomMovies = async (page = 1) => {
+    this.setState({ loading: true, error: false })
+
     try {
-      const films = await fetchMovies('return')
-      this.setState({ films, loading: false })
+      const { results, total_results } = await fetchRandomMovies(page)
+      this.setState({
+        films: results,
+        loading: false,
+        totalResults: total_results,
+        currentPage: page,
+      })
     } catch (error) {
       this.setState({ error: true, loading: false })
     }
   }
 
-  render() {
+  searchMovies = debounce(async (query = this.state.query, page = 1) => {
+    this.setState({ loading: true, error: false })
+
+    try {
+      const { results, total_results } = await fetchMovies(query, page)
+      this.setState({
+        films: results,
+        loading: false,
+        totalResults: total_results,
+        currentPage: page,
+      })
+    } catch (error) {
+      this.setState({ error: true, loading: false })
+    }
+  }, 500)
+
+  updateSearchResults = (films, totalResults, currentPage) => {
+    this.setState({ films, totalResults, currentPage })
+  }
+
+  onSearch = (query) => {
+    this.setState({ query, currentPage: 1 }, () => {
+      if (query) {
+        this.searchMovies(query)
+      } else {
+        this.updateSearchResults([], 0, 1)
+      }
+    })
+  }
+
+  onPageChange = (page) => {
+    this.setState({ currentPage: page }, () => {
+      this.searchMovies(this.state.query, page)
+    })
+  }
+
+  renderContent = () => {
     const { films, loading, error } = this.state
     const hasData = !loading && !error
-    const errorMessage = error ? <ErrorComponent /> : null
-    const spin = loading ? <Spin /> : null
-    const content = hasData ? <CardList films={films} /> : null
+
+    if (loading) return <Spinner />
+    if (error) return <ErrorComponent />
+    if (films.length === 0) return <NoResults />
+    if (hasData) return <CardList films={films} />
+    return null
+  }
+
+  render() {
+    const { currentPage, totalResults } = this.state
+    const totalPages = Math.min(Math.ceil(totalResults / 20), 100)
 
     return (
       <div className="App">
-        <Header />
+        <Header onSearch={this.onSearch} />
         <Offline>
-          <div className="offline-message">Нет сети. Проверьте ваше подключение к интернету.</div>
+          <OfflineMessage />
         </Offline>
-        <Online>
-          {errorMessage}
-          {spin}
-          {content}
-        </Online>
-        <Footer />
+        <Online>{this.renderContent()}</Online>
+        <Footer currentPage={currentPage} totalPages={totalPages} onPageChange={this.onPageChange} />
       </div>
     )
   }
