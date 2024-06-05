@@ -6,7 +6,7 @@ import './App.css'
 import Header from '../Header/Header'
 import CardList from '../CardList/CardList'
 import Footer from '../Footer/Footer'
-import { fetchMovies, fetchRandomMovies } from '../../utils/api'
+import { fetchMovies, fetchRandomMovies, createGuestSession } from '../../utils/api'
 import Spinner from '../Spin/Spin'
 import ErrorComponent from '../Error/Error'
 import NoResults from '../NoResults/NoResults'
@@ -23,6 +23,7 @@ export default class App extends Component {
   }
 
   componentDidMount() {
+    this.createGuestSession()
     this.loadRandomMovies()
   }
 
@@ -39,6 +40,16 @@ export default class App extends Component {
       })
     } catch (error) {
       this.setState({ error: true, loading: false })
+    }
+  }
+
+  createGuestSession = async () => {
+    try {
+      const guestSessionId = await createGuestSession()
+      this.setState({ guestSessionId })
+      console.log('Guest session created with ID:', guestSessionId)
+    } catch (error) {
+      console.error('Error creating guest session:', error)
     }
   }
 

@@ -26,3 +26,13 @@ export const fetchRandomMovies = async (page = 1) => {
     return { results: [], total_results: 0 }
   }
 }
+export const createGuestSession = async () => {
+  try {
+    const response = await fetch(`${BASE_URL}/authentication/guest_session/new?api_key=${API_KEY}`)
+    const data = await response.json()
+    return data.guest_session_id
+  } catch (error) {
+    console.error('Error creating guest session:', error)
+    throw error
+  }
+}
