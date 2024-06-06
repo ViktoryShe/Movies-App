@@ -6,6 +6,7 @@
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   margin: 10px;
   width: 390px; 
+  position: relative;
 }
 
 .card-image {
@@ -25,6 +26,7 @@
   text-align: start;
   margin: 0;
   font-size: 20px;
+  margin-right: 30px;
 }
 
 .card-date {
@@ -62,6 +64,11 @@
 .card-rating {
   display: flex;
   align-items: center;
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 2px solid;
+  border-radius: 50%;
 }
 
 .rating-number {
@@ -71,6 +78,19 @@
   font-size: 12px;
   color: #333;
   text-align: center;
-  border: 2px solid #FFD700;
-  border-radius: 50%;
+}
+
+.card-stars {
+  display: flex;
+}
+
+.star {
+  font-size: 20px;
+  cursor: pointer;
+  color: #ddd;
+  margin-right: 5px;
+}
+
+.star.filled {
+  color: #FFD700;
 }

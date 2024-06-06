@@ -11,6 +11,8 @@ import Spinner from '../Spin/Spin'
 import ErrorComponent from '../Error/Error'
 import NoResults from '../NoResults/NoResults'
 import OfflineMessage from '../OfflineMessage/OfflineMessage'
+// import SearchTab from '../SearchTab/SearchTab'
+import RatedTab from '../RatedTab/RatedTab'
 
 export default class App extends Component {
   state = {
@@ -20,6 +22,7 @@ export default class App extends Component {
     query: '',
     totalResults: 0,
     currentPage: 1,
+    activeTab: 'search',
   }
 
   componentDidMount() {
@@ -89,24 +92,29 @@ export default class App extends Component {
     })
   }
 
+  handleTabChange = (tab) => {
+    this.setState({ activeTab: tab })
+  }
+
   renderContent = () => {
-    const { films, loading, error } = this.state
+    const { films, loading, error, activeTab } = this.state
     const hasData = !loading && !error
 
     if (loading) return <Spinner />
     if (error) return <ErrorComponent />
     if (films.length === 0) return <NoResults />
-    if (hasData) return <CardList films={films} />
+    if (activeTab === 'search' && hasData) return <CardList films={films} />
+    if (activeTab === 'rated') return <RatedTab />
     return null
   }
 
   render() {
-    const { currentPage, totalResults } = this.state
+    const { currentPage, totalResults, activeTab } = this.state
     const totalPages = Math.min(Math.ceil(totalResults / 20), 100)
 
     return (
       <div className="App">
-        <Header onSearch={this.onSearch} />
+        <Header onSearch={this.onSearch} onTabChange={this.handleTabChange} activeTab={activeTab} />
         <Offline>
           <OfflineMessage />
         </Offline>

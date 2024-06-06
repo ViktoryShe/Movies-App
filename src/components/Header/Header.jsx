@@ -8,13 +8,26 @@ export default class Header extends Component {
       this.props.onSearch(query)
     }
   }
+  handleTabClick = (tab) => {
+    if (this.props.onTabChange) {
+      this.props.onTabChange(tab)
+    }
+  }
 
   render() {
+    const { activeTab } = this.props
     return (
       <header className="Header">
         <div className="tabs">
-          <div className="tab active">Search</div>
-          <div className="tab">Rated</div>
+          <div
+            className={`tab ${activeTab === 'search' ? 'active' : ''}`}
+            onClick={() => this.handleTabClick('search')}
+          >
+            Search
+          </div>
+          <div className={`tab ${activeTab === 'rated' ? 'active' : ''}`} onClick={() => this.handleTabClick('rated')}>
+            Rated
+          </div>
         </div>
         <input type="text" className="search-bar" placeholder="Type to search..." onChange={this.handleInputChange} />
       </header>
