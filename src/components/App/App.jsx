@@ -4,15 +4,15 @@ import debounce from 'lodash.debounce'
 import './App.css'
 
 import Header from '../Header/Header'
-import CardList from '../CardList/CardList'
 import Footer from '../Footer/Footer'
-import { fetchMovies, fetchRandomMovies, createGuestSession } from '../../utils/api'
+import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie } from '../../utils/api'
 import Spinner from '../Spin/Spin'
 import ErrorComponent from '../Error/Error'
 import NoResults from '../NoResults/NoResults'
 import OfflineMessage from '../OfflineMessage/OfflineMessage'
-// import SearchTab from '../SearchTab/SearchTab'
+import SearchTab from '../SearchTab/SearchTab'
 import RatedTab from '../RatedTab/RatedTab'
+import { GenresProvider } from '../GenresContext/GenresContext'
 
 export default class App extends Component {
   state = {
@@ -23,11 +23,26 @@ export default class App extends Component {
     totalResults: 0,
     currentPage: 1,
     activeTab: 'search',
+    guestSessionId: '',
+    ratedMovies: [],
+    currentPageRated: 1,
+    ratedTotalPages: 1,
   }
 
   componentDidMount() {
     this.createGuestSession()
-    this.loadRandomMovies()
+  }
+
+  createGuestSession = async () => {
+    try {
+      const guestSessionId = await createGuestSession()
+      localStorage.setItem('guestSessionId', guestSessionId)
+      console.log('Guest session created with ID:', guestSessionId)
+      this.setState({ guestSessionId })
+      this.loadRandomMovies()
+    } catch (error) {
+      console.error('Error creating guest session:', error)
+    }
   }
 
   loadRandomMovies = async (page = 1) => {
@@ -46,23 +61,18 @@ export default class App extends Component {
     }
   }
 
-  createGuestSession = async () => {
-    try {
-      const guestSessionId = await createGuestSession()
-      this.setState({ guestSessionId })
-      console.log('Guest session created with ID:', guestSessionId)
-    } catch (error) {
-      console.error('Error creating guest session:', error)
-    }
-  }
-
   searchMovies = debounce(async (query = this.state.query, page = 1) => {
     this.setState({ loading: true, error: false })
 
     try {
       const { results, total_results } = await fetchMovies(query, page)
+      const updatedResults = results.map((movie) => {
+        const ratedMovie = this.state.ratedMovies.find((rated) => rated.movieId === movie.id)
+        return ratedMovie ? { ...movie, rating: ratedMovie.rating } : movie
+      })
+
       this.setState({
-        films: results,
+        films: updatedResults,
         loading: false,
         totalResults: total_results,
         currentPage: page,
@@ -72,6 +82,30 @@ export default class App extends Component {
     }
   }, 500)
 
+  rateMovieHandler = async (movieId, rating) => {
+    try {
+      await rateMovie(movieId, rating, this.state.guestSessionId)
+      this.setState((prevState) => ({
+        ratedMovies: [...prevState.ratedMovies, { movieId, rating }],
+        ratedTotalPages: Math.ceil((prevState.ratedMovies.length + 1) / 20),
+      }))
+    } catch (error) {
+      console.error('Error rating movie:', error)
+    }
+  }
+
+  handleStarClick = async (index, movieId) => {
+    const rating = index + 1
+    console.log(`You rated the movie with ID "${movieId}" ${rating}`)
+    try {
+      await this.rateMovieHandler(movieId, rating)
+      this.setState((prevState) => ({
+        films: prevState.films.map((film) => (film.id === movieId ? { ...film, rating } : film)),
+      }))
+    } catch (error) {
+      console.error('Error rating movie:', error)
+    }
+  }
   updateSearchResults = (films, totalResults, currentPage) => {
     this.setState({ films, totalResults, currentPage })
   }
@@ -97,14 +131,29 @@ export default class App extends Component {
   }
 
   renderContent = () => {
-    const { films, loading, error, activeTab } = this.state
+    const { films, loading, error, activeTab, ratedMovies, currentPageRated, ratedTotalPages } = this.state
     const hasData = !loading && !error
 
     if (loading) return <Spinner />
     if (error) return <ErrorComponent />
-    if (films.length === 0) return <NoResults />
-    if (activeTab === 'search' && hasData) return <CardList films={films} />
-    if (activeTab === 'rated') return <RatedTab />
+    if (activeTab === 'search' && hasData) {
+      if (films.length === 0) return <NoResults />
+      return (
+        <GenresProvider>
+          <SearchTab films={films} guestSessionId={this.state.guestSessionId} handleStarClick={this.handleStarClick} />
+        </GenresProvider>
+      )
+    }
+    if (activeTab === 'rated') {
+      return (
+        <RatedTab
+          ratedMovies={ratedMovies}
+          currentPageRated={currentPageRated}
+          ratedTotalPages={ratedTotalPages}
+          handleStarClick={this.handleStarClick}
+        />
+      )
+    }
     return null
   }
 

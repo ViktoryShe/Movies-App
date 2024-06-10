@@ -8,13 +8,22 @@ export default class Card extends Component {
   constructor(props) {
     super(props)
     this.state = {
-      userRating: 0,
+      userRating: props.userRating || 0,
     }
   }
 
-  handleStarClick = (index) => {
-    this.setState({ userRating: index + 1 })
+  handleStarClick = async (index) => {
+    const { id, handleStarClick } = this.props
+    const rating = index + 1
+    console.log(`You rated the movie with ID "${id}" ${rating}`)
+    this.setState({ userRating: rating })
+    try {
+      await handleStarClick(index, id)
+    } catch (error) {
+      console.error('Error rating movie:', error)
+    }
   }
+
   getRatingColor(rating) {
     if (rating <= 3) {
       return '#E90000'
@@ -44,16 +53,24 @@ export default class Card extends Component {
     )
   }
 
-  renderTags(tags) {
-    return tags.map((tag) => (
-      <span key={tag} className="tag">
-        {tag}
+  renderGenres(genres) {
+    return genres.map((genre, index) => (
+      <span key={`${genre}-${index}`} className="genre">
+        {genre}
       </span>
     ))
   }
 
+  getGenreNames(genreIds) {
+    const { genres } = this.props
+    return genreIds.map((id) => {
+      const genre = genres.find((genre) => genre.id === id)
+      return genre ? genre.name : 'Unknown Genre'
+    })
+  }
+
   render() {
-    const { title, date, tags, description, rating, image } = this.props
+    const { title, date, genres, description, rating, image } = this.props
     const imageUrl = image !== 'N/A' ? image : defaultImage
     const truncatedDescription = truncateText(description, 150)
     const ratingColor = this.getRatingColor(rating)
@@ -64,7 +81,7 @@ export default class Card extends Component {
         <div className="card-content">
           <h3 className="card-title">{title}</h3>
           <p className="card-date">{date}</p>
-          <div className="card-tags">{this.renderTags(tags)}</div>
+          <div className="card-genres">{this.renderGenres(genres)}</div>
           <p className="card-description">{truncatedDescription}</p>
           <div className="card-rating" style={{ borderColor: ratingColor }}>
             <span className="rating-number">{rating}</span>

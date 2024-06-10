@@ -22,15 +22,16 @@ export default class Footer extends Component {
 
     return { startPage, endPage }
   }
+
   renderPageNumbers = () => {
-    const { onPageChange } = this.props
+    const { onPageChange, currentPage, totalPages } = this.props
     const { startPage, endPage } = this.calculateStartAndEndPages()
     const pages = []
 
     const renderPage = (pageNumber) => (
       <span
-        key={pageNumber}
-        className={`page ${this.props.currentPage === pageNumber ? 'active' : ''}`}
+        key={`page_${pageNumber}_${Math.random()}`}
+        className={`page ${currentPage === pageNumber ? 'active' : ''}`}
         onClick={() => onPageChange(pageNumber)}
       >
         {pageNumber}
@@ -40,7 +41,7 @@ export default class Footer extends Component {
     if (startPage > 1) {
       pages.push(
         renderPage(1),
-        <span key="dots_1" className="dots">
+        <span key="dots_start" className="dots">
           ...
         </span>
       )
@@ -50,12 +51,12 @@ export default class Footer extends Component {
       pages.push(renderPage(i))
     }
 
-    if (endPage < this.props.totalPages) {
+    if (endPage < totalPages) {
       pages.push(
-        <span key="dots_2" className="dots">
+        <span key="dots_end" className="dots">
           ...
         </span>,
-        renderPage(this.props.totalPages)
+        renderPage(totalPages)
       )
     }
 

@@ -36,12 +36,12 @@
   text-align: start;
 }
 
-.card-tags {
+.card-genres {
   margin: 0px;
   text-align: start;
 }
 
-.tag {
+.genre {
   display: inline-block;
   background:  #FAFAFA;
   border: 1px solid #D9D9D9;
