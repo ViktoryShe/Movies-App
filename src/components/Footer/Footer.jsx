@@ -2,35 +2,13 @@ import React, { Component } from 'react'
 import './Footer.css'
 
 export default class Footer extends Component {
-  calculateStartAndEndPages = () => {
-    const { currentPage, totalPages } = this.props
-    let startPage = currentPage - 1
-    let endPage = currentPage + 1
-
-    if (totalPages <= 3) {
-      startPage = 2
-      endPage = totalPages - 1
-    } else {
-      if (currentPage <= 2) {
-        startPage = 2
-        endPage = 4
-      } else if (currentPage >= totalPages - 1) {
-        startPage = totalPages - 3
-        endPage = totalPages - 1
-      }
-    }
-
-    return { startPage, endPage }
-  }
-
   renderPageNumbers = () => {
     const { onPageChange, currentPage, totalPages } = this.props
-    const { startPage, endPage } = this.calculateStartAndEndPages()
     const pages = []
 
     const renderPage = (pageNumber) => (
       <span
-        key={`page_${pageNumber}_${Math.random()}`}
+        key={`page_${pageNumber}`}
         className={`page ${currentPage === pageNumber ? 'active' : ''}`}
         onClick={() => onPageChange(pageNumber)}
       >
@@ -38,25 +16,29 @@ export default class Footer extends Component {
       </span>
     )
 
-    if (startPage > 1) {
+    if (currentPage > 1) {
       pages.push(
-        renderPage(1),
-        <span key="dots_start" className="dots">
-          ...
+        <span key="prev" className="arrow" onClick={() => onPageChange(currentPage - 1)}>
+          &laquo;
         </span>
       )
     }
 
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(renderPage(i))
+    if (currentPage > 2) {
+      pages.push(renderPage(currentPage - 1))
     }
 
-    if (endPage < totalPages) {
+    pages.push(renderPage(currentPage))
+
+    if (currentPage < totalPages - 1) {
+      pages.push(renderPage(currentPage + 1))
+    }
+
+    if (currentPage < totalPages) {
       pages.push(
-        <span key="dots_end" className="dots">
-          ...
-        </span>,
-        renderPage(totalPages)
+        <span key="next" className="arrow" onClick={() => onPageChange(currentPage + 1)}>
+          &raquo;
+        </span>
       )
     }
 

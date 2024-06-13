@@ -9,7 +9,7 @@
   gap: 10px;
 }
 
-.page, .dots {
+.page, .dots, .arrow {
   padding: 10px 15px;
   background: #fff;
   border: 1px solid #ddd;
@@ -17,11 +17,11 @@
   cursor: pointer;
 }
 
-.page:hover {
+.page:hover, .arrow:hover {
   background: #f0f0f0;
 }
 
-.page.active {
+.page.active, .arrow.active {
   background: #2196F3;
   color: white;
   border-color: #2196F3;

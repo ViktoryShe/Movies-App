@@ -29,7 +29,9 @@ export default class Header extends Component {
             Rated
           </div>
         </div>
-        <input type="text" className="search-bar" placeholder="Type to search..." onChange={this.handleInputChange} />
+        {activeTab === 'search' && (
+          <input type="text" className="search-bar" placeholder="Type to search..." onChange={this.handleInputChange} />
+        )}
       </header>
     )
   }

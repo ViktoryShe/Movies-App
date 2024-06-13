@@ -130,6 +130,10 @@ export default class App extends Component {
     this.setState({ activeTab: tab })
   }
 
+  handleRatedPageChange = (page) => {
+    this.setState({ currentPageRated: page })
+  }
+
   renderContent = () => {
     const { films, loading, error, activeTab, ratedMovies, currentPageRated, ratedTotalPages } = this.state
     const hasData = !loading && !error
@@ -146,20 +150,23 @@ export default class App extends Component {
     }
     if (activeTab === 'rated') {
       return (
-        <RatedTab
-          ratedMovies={ratedMovies}
-          currentPageRated={currentPageRated}
-          ratedTotalPages={ratedTotalPages}
-          handleStarClick={this.handleStarClick}
-        />
+        <GenresProvider>
+          <RatedTab
+            ratedMovies={ratedMovies}
+            currentPageRated={currentPageRated}
+            ratedTotalPages={ratedTotalPages}
+            handleStarClick={this.handleStarClick}
+          />
+        </GenresProvider>
       )
     }
     return null
   }
 
   render() {
-    const { currentPage, totalResults, activeTab } = this.state
-    const totalPages = Math.min(Math.ceil(totalResults / 20), 100)
+    const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated } = this.state
+    const totalPages = Math.ceil(totalResults / 20)
+    const ratedTotalPages = Math.ceil(ratedMovies.length / 20)
 
     return (
       <div className="App">
@@ -168,7 +175,15 @@ export default class App extends Component {
           <OfflineMessage />
         </Offline>
         <Online>{this.renderContent()}</Online>
-        <Footer currentPage={currentPage} totalPages={totalPages} onPageChange={this.onPageChange} />
+        {activeTab === 'search' ? (
+          <Footer currentPage={currentPage} totalPages={totalPages} onPageChange={this.onPageChange} />
+        ) : (
+          <Footer
+            currentPage={currentPageRated}
+            totalPages={ratedTotalPages}
+            onPageChange={this.handleRatedPageChange}
+          />
+        )}
       </div>
     )
   }
