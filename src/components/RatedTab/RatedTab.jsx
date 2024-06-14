@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
 import CardList from '../CardList/CardList'
-import { fetchMovieDetails } from '../../utils/api'
+import { fetchMovieDetails } from '../../api/api'
 import './RatedTab.css'
+import AlertMessage from '../AlertMessage/AlertMessage'
 
 const RatedTab = ({ ratedMovies, handleStarClick, currentPageRated }) => {
   const [moviesWithDetails, setMoviesWithDetails] = useState([])
@@ -29,7 +30,7 @@ const RatedTab = ({ ratedMovies, handleStarClick, currentPageRated }) => {
       {moviesWithDetails.length > 0 ? (
         <CardList films={moviesWithDetails} handleStarClick={handleStarClick} />
       ) : (
-        <div className="no-rated-movies">No rated movies found.</div>
+        <AlertMessage message="Нет результатов" description="Оцените фильм" type="warning" />
       )}
     </div>
   )

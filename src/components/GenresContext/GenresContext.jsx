@@ -1,6 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react'
 
-import { fetchGenres } from '../../utils/api'
+import { fetchGenres } from '../../api/api'
 
 const GenresContext = createContext()
 

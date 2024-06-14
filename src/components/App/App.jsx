@@ -5,11 +5,9 @@ import './App.css'
 
 import Header from '../Header/Header'
 import Footer from '../Footer/Footer'
-import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie } from '../../utils/api'
+import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie } from '../../api/api'
 import Spinner from '../Spin/Spin'
-import ErrorComponent from '../Error/Error'
-import NoResults from '../NoResults/NoResults'
-import OfflineMessage from '../OfflineMessage/OfflineMessage'
+import AlertMessage from '../AlertMessage/AlertMessage'
 import SearchTab from '../SearchTab/SearchTab'
 import RatedTab from '../RatedTab/RatedTab'
 import { GenresProvider } from '../GenresContext/GenresContext'
@@ -30,18 +28,24 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    this.createGuestSession()
+    const storedGuestSessionId = localStorage.getItem('guestSessionId')
+    if (storedGuestSessionId) {
+      this.setState({ guestSessionId: storedGuestSessionId }, () => {
+        this.loadRandomMovies()
+      })
+    } else {
+      this.createGuestSession()
+    }
   }
 
   createGuestSession = async () => {
     try {
       const guestSessionId = await createGuestSession()
       localStorage.setItem('guestSessionId', guestSessionId)
-      console.log('Guest session created with ID:', guestSessionId)
       this.setState({ guestSessionId })
       this.loadRandomMovies()
     } catch (error) {
-      console.error('Error creating guest session:', error)
+      return <AlertMessage message="Ошибка создания гостевой сессии" description={error.message} type="error" />
     }
   }
 
@@ -90,22 +94,22 @@ export default class App extends Component {
         ratedTotalPages: Math.ceil((prevState.ratedMovies.length + 1) / 20),
       }))
     } catch (error) {
-      console.error('Error rating movie:', error)
+      return <AlertMessage message="Ошибка поиска фильмов" description={error.message} type="error" />
     }
   }
 
   handleStarClick = async (index, movieId) => {
     const rating = index + 1
-    console.log(`You rated the movie with ID "${movieId}" ${rating}`)
     try {
       await this.rateMovieHandler(movieId, rating)
       this.setState((prevState) => ({
         films: prevState.films.map((film) => (film.id === movieId ? { ...film, rating } : film)),
       }))
     } catch (error) {
-      console.error('Error rating movie:', error)
+      return <AlertMessage message="Ошибка оценки фильма" description={error.message} type="error" />
     }
   }
+
   updateSearchResults = (films, totalResults, currentPage) => {
     this.setState({ films, totalResults, currentPage })
   }
@@ -139,9 +143,10 @@ export default class App extends Component {
     const hasData = !loading && !error
 
     if (loading) return <Spinner />
-    if (error) return <ErrorComponent />
+    if (error) return <AlertMessage message="Что-то пошло не так" description="Но скоро все исправится" type="error" />
     if (activeTab === 'search' && hasData) {
-      if (films.length === 0) return <NoResults />
+      if (films.length === 0)
+        return <AlertMessage message="Нет результатов" description="Попробуйте изменить запрос" type="warning" />
       return (
         <GenresProvider>
           <SearchTab films={films} guestSessionId={this.state.guestSessionId} handleStarClick={this.handleStarClick} />
@@ -172,7 +177,7 @@ export default class App extends Component {
       <div className="App">
         <Header onSearch={this.onSearch} onTabChange={this.handleTabChange} activeTab={activeTab} />
         <Offline>
-          <OfflineMessage />
+          <AlertMessage message="Нет соединения" description="Проверьте интернет-соединение" type="warning" />
         </Offline>
         <Online>{this.renderContent()}</Online>
         {activeTab === 'search' ? (

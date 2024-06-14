@@ -3,6 +3,7 @@ import React, { Component } from 'react'
 import './Card.css'
 import defaultImage from '../../assets/zaglushka.png'
 import { truncateText } from '../../utils/utils'
+import AlertMessage from '../AlertMessage/AlertMessage'
 
 export default class Card extends Component {
   constructor(props) {
@@ -15,24 +16,23 @@ export default class Card extends Component {
   handleStarClick = async (index) => {
     const { id, handleStarClick } = this.props
     const rating = index + 1
-    console.log(`You rated the movie with ID "${id}" ${rating}`)
     this.setState({ userRating: rating })
     try {
       await handleStarClick(index, id)
     } catch (error) {
-      console.error('Error rating movie:', error)
+      return <AlertMessage message="Ошибка оценки фильма" description={error.message} type="error" />
     }
   }
 
-  getRatingColor(rating) {
+  getRatingClass(rating) {
     if (rating <= 3) {
-      return '#E90000'
+      return 'rating-low'
     } else if (rating <= 5) {
-      return '#E97E00'
+      return 'rating-medium-low'
     } else if (rating <= 7) {
-      return '#E9D100'
+      return 'rating-medium-high'
     } else {
-      return '#66E900'
+      return 'rating-high'
     }
   }
 
@@ -73,7 +73,7 @@ export default class Card extends Component {
     const { title, date, genres, description, rating, image } = this.props
     const imageUrl = image !== 'N/A' ? image : defaultImage
     const truncatedDescription = truncateText(description, 150)
-    const ratingColor = this.getRatingColor(rating)
+    const ratingClass = this.getRatingClass(rating)
 
     return (
       <div className="Card">
@@ -83,7 +83,7 @@ export default class Card extends Component {
           <p className="card-date">{date}</p>
           <div className="card-genres">{this.renderGenres(genres)}</div>
           <p className="card-description">{truncatedDescription}</p>
-          <div className="card-rating" style={{ borderColor: ratingColor }}>
+          <div className={`card-rating ${ratingClass}`}>
             <span className="rating-number">{rating}</span>
           </div>
           {this.renderStars()}
