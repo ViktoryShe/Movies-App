@@ -1,22 +1,28 @@
-import React, { createContext, useState, useEffect } from 'react'
+import React, { Component } from 'react'
 
 import { fetchGenres } from '../../api/api'
 
-const GenresContext = createContext()
+const GenresContext = React.createContext()
 
-export const GenresProvider = ({ children }) => {
-  const [genres, setGenres] = useState([])
-
-  useEffect(() => {
-    const getGenres = async () => {
-      const fetchedGenres = await fetchGenres()
-      setGenres(fetchedGenres)
+export class GenresProvider extends Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      genres: [],
     }
+  }
 
-    getGenres()
-  }, [])
+  async componentDidMount() {
+    const fetchedGenres = await fetchGenres()
+    this.setState({ genres: fetchedGenres })
+  }
 
-  return <GenresContext.Provider value={genres}>{children}</GenresContext.Provider>
+  render() {
+    const { genres } = this.state
+    const { children } = this.props
+
+    return <GenresContext.Provider value={genres}>{children}</GenresContext.Provider>
+  }
 }
 
 export default GenresContext

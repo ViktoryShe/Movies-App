@@ -6,17 +6,15 @@ import './App.css'
 import Header from '../Header/Header'
 import Footer from '../Footer/Footer'
 import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie } from '../../api/api'
-import Spinner from '../Spin/Spin'
 import AlertMessage from '../AlertMessage/AlertMessage'
-import SearchTab from '../SearchTab/SearchTab'
-import RatedTab from '../RatedTab/RatedTab'
-import { GenresProvider } from '../GenresContext/GenresContext'
+import Content from '../Content/Content'
 
 export default class App extends Component {
   state = {
     films: [],
     loading: false,
     error: false,
+    errorMessage: '',
     query: '',
     totalResults: 0,
     currentPage: 1,
@@ -30,9 +28,7 @@ export default class App extends Component {
   componentDidMount() {
     const storedGuestSessionId = localStorage.getItem('guestSessionId')
     if (storedGuestSessionId) {
-      this.setState({ guestSessionId: storedGuestSessionId }, () => {
-        this.loadRandomMovies()
-      })
+      this.setState({ guestSessionId: storedGuestSessionId }, this.loadRandomMovies)
     } else {
       this.createGuestSession()
     }
@@ -41,17 +37,17 @@ export default class App extends Component {
   createGuestSession = async () => {
     try {
       const guestSessionId = await createGuestSession()
+      const url = new URL(window.location.href)
+      url.searchParams.set('guestSessionId', guestSessionId)
       localStorage.setItem('guestSessionId', guestSessionId)
-      this.setState({ guestSessionId })
-      this.loadRandomMovies()
+      this.setState({ guestSessionId }, this.loadRandomMovies)
     } catch (error) {
-      return <AlertMessage message="Ошибка создания гостевой сессии" description={error.message} type="error" />
+      this.setError(error.message)
     }
   }
 
   loadRandomMovies = async (page = 1) => {
-    this.setState({ loading: true, error: false })
-
+    this.setLoading(true)
     try {
       const { results, total_results } = await fetchRandomMovies(page)
       this.setState({
@@ -61,13 +57,12 @@ export default class App extends Component {
         currentPage: page,
       })
     } catch (error) {
-      this.setState({ error: true, loading: false })
+      this.setError(error.message)
     }
   }
 
   searchMovies = debounce(async (query = this.state.query, page = 1) => {
-    this.setState({ loading: true, error: false })
-
+    this.setLoading(true)
     try {
       const { results, total_results } = await fetchMovies(query, page)
       const updatedResults = results.map((movie) => {
@@ -82,7 +77,7 @@ export default class App extends Component {
         currentPage: page,
       })
     } catch (error) {
-      this.setState({ error: true, loading: false })
+      this.setError(error.message)
     }
   }, 500)
 
@@ -94,7 +89,7 @@ export default class App extends Component {
         ratedTotalPages: Math.ceil((prevState.ratedMovies.length + 1) / 20),
       }))
     } catch (error) {
-      return <AlertMessage message="Ошибка поиска фильмов" description={error.message} type="error" />
+      this.setError(error.message)
     }
   }
 
@@ -106,22 +101,22 @@ export default class App extends Component {
         films: prevState.films.map((film) => (film.id === movieId ? { ...film, rating } : film)),
       }))
     } catch (error) {
-      return <AlertMessage message="Ошибка оценки фильма" description={error.message} type="error" />
+      this.setError(error.message)
     }
   }
 
-  updateSearchResults = (films, totalResults, currentPage) => {
-    this.setState({ films, totalResults, currentPage })
-  }
-
-  onSearch = (query) => {
-    this.setState({ query, currentPage: 1 }, () => {
+  onSearch = async (query) => {
+    this.setLoading(true)
+    try {
+      this.setState({ query, currentPage: 1, error: false })
       if (query) {
-        this.searchMovies(query)
+        await this.searchMovies(query)
       } else {
         this.updateSearchResults([], 0, 1)
       }
-    })
+    } catch (error) {
+      this.setError(error.message)
+    }
   }
 
   onPageChange = (page) => {
@@ -138,38 +133,16 @@ export default class App extends Component {
     this.setState({ currentPageRated: page })
   }
 
-  renderContent = () => {
-    const { films, loading, error, activeTab, ratedMovies, currentPageRated, ratedTotalPages } = this.state
-    const hasData = !loading && !error
+  setLoading = (loading) => {
+    this.setState({ loading, error: false, errorMessage: '' })
+  }
 
-    if (loading) return <Spinner />
-    if (error) return <AlertMessage message="Что-то пошло не так" description="Но скоро все исправится" type="error" />
-    if (activeTab === 'search' && hasData) {
-      if (films.length === 0)
-        return <AlertMessage message="Нет результатов" description="Попробуйте изменить запрос" type="warning" />
-      return (
-        <GenresProvider>
-          <SearchTab films={films} guestSessionId={this.state.guestSessionId} handleStarClick={this.handleStarClick} />
-        </GenresProvider>
-      )
-    }
-    if (activeTab === 'rated') {
-      return (
-        <GenresProvider>
-          <RatedTab
-            ratedMovies={ratedMovies}
-            currentPageRated={currentPageRated}
-            ratedTotalPages={ratedTotalPages}
-            handleStarClick={this.handleStarClick}
-          />
-        </GenresProvider>
-      )
-    }
-    return null
+  setError = (message) => {
+    this.setState({ error: true, loading: false, errorMessage: message })
   }
 
   render() {
-    const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated } = this.state
+    const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated, error } = this.state
     const totalPages = Math.ceil(totalResults / 20)
     const ratedTotalPages = Math.ceil(ratedMovies.length / 20)
 
@@ -179,7 +152,20 @@ export default class App extends Component {
         <Offline>
           <AlertMessage message="Нет соединения" description="Проверьте интернет-соединение" type="warning" />
         </Offline>
-        <Online>{this.renderContent()}</Online>
+        <Online>
+          {error}
+          <Content
+            films={this.state.films}
+            loading={this.state.loading}
+            error={this.state.error}
+            activeTab={this.state.activeTab}
+            ratedMovies={this.state.ratedMovies}
+            currentPageRated={this.state.currentPageRated}
+            ratedTotalPages={this.state.ratedTotalPages}
+            guestSessionId={this.state.guestSessionId}
+            handleStarClick={this.handleStarClick}
+          />
+        </Online>
         {activeTab === 'search' ? (
           <Footer currentPage={currentPage} totalPages={totalPages} onPageChange={this.onPageChange} />
         ) : (

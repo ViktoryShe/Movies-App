@@ -10,17 +10,18 @@ export default class Card extends Component {
     super(props)
     this.state = {
       userRating: props.userRating || 0,
+      error: null,
     }
   }
 
   handleStarClick = async (index) => {
     const { id, handleStarClick } = this.props
     const rating = index + 1
-    this.setState({ userRating: rating })
+    this.setState({ userRating: rating, error: null })
     try {
       await handleStarClick(index, id)
     } catch (error) {
-      return <AlertMessage message="Ошибка оценки фильма" description={error.message} type="error" />
+      this.setState({ error })
     }
   }
 
@@ -61,22 +62,16 @@ export default class Card extends Component {
     ))
   }
 
-  getGenreNames(genreIds) {
-    const { genres } = this.props
-    return genreIds.map((id) => {
-      const genre = genres.find((genre) => genre.id === id)
-      return genre ? genre.name : 'Unknown Genre'
-    })
-  }
-
   render() {
     const { title, date, genres, description, rating, image } = this.props
+    const { error } = this.state
     const imageUrl = image !== 'N/A' ? image : defaultImage
     const truncatedDescription = truncateText(description, 150)
     const ratingClass = this.getRatingClass(rating)
 
     return (
       <div className="Card">
+        {error && <AlertMessage message="Ошибка оценки фильма" description={error.message} type="error" />}
         <img src={imageUrl} className="card-image" alt={title} />
         <div className="card-content">
           <h3 className="card-title">{title}</h3>

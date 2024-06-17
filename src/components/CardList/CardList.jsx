@@ -13,34 +13,40 @@ const CardList = ({ films, handleStarClick, guestSessionId }) => {
     return date && !isNaN(date) ? format(date, 'MMMM d, yyyy') : 'Date not available'
   }
 
+  const genreMap = new Map(genres.map((genre) => [genre.id, genre.name]))
+
   const getGenreNames = (genreIds) => {
-    return genreIds.map((id) => {
-      const genre = genres.find((genre) => genre.id === id)
-      return genre ? genre.name : 'Unknown Genre'
-    })
+    return genreIds.map((id) => genreMap.get(id) || 'Unknown Genre')
   }
 
-  const createCard = (film, index) => {
-    const { id, title, release_date: releaseDate, overview, vote_average, poster_path: posterPath, rating } = film
-    const genreNames = getGenreNames(film.genre_ids || [])
-    return (
-      <Card
-        key={`${id}-${index}`}
-        id={id}
-        title={title}
-        date={formatDate(releaseDate)}
-        genres={genreNames}
-        description={overview || 'No description available'}
-        rating={vote_average ? vote_average.toFixed(1) : rating || 'N/A'}
-        image={posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : 'N/A'}
-        guestSessionId={guestSessionId}
-        handleStarClick={handleStarClick}
-        userRating={rating}
-      />
-    )
+  if (!films || films.length === 0) {
+    return <div className="card-list">No films available</div>
   }
 
-  return <div className="card-list">{films.map(createCard)}</div>
+  return (
+    <div className="card-list">
+      {films.map((film) => {
+        const { id, title, release_date: releaseDate, overview, vote_average, poster_path: posterPath, rating } = film
+        const genreNames = getGenreNames(film.genre_ids || [])
+
+        return (
+          <Card
+            key={id}
+            id={id}
+            title={title}
+            date={formatDate(releaseDate)}
+            genres={genreNames}
+            description={overview || 'No description available'}
+            rating={vote_average ? vote_average.toFixed(1) : rating || 'N/A'}
+            image={posterPath ? `https://image.tmdb.org/t/p/w500${posterPath}` : 'N/A'}
+            guestSessionId={guestSessionId}
+            handleStarClick={handleStarClick}
+            userRating={rating}
+          />
+        )
+      })}
+    </div>
+  )
 }
 
 export default CardList

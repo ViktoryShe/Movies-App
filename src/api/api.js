@@ -1,10 +1,17 @@
 const API_KEY = 'df30e5514ef2cafab70d1eab9a6c21a4'
 const BASE_URL = 'https://api.themoviedb.org/3'
 
+const checkStatus = (response) => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`)
+  }
+  return response.json()
+}
+
 export const fetchMovies = async (query, page = 1) => {
   try {
     const response = await fetch(`${BASE_URL}/search/movie?api_key=${API_KEY}&query=${query}&page=${page}`)
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -19,7 +26,7 @@ export const fetchRandomMovies = async (page = 1) => {
 
   try {
     const response = await fetch(`${BASE_URL}/movie/popular?api_key=${API_KEY}&page=${page}`)
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data
   } catch (error) {
     console.error('Error fetching data:', error)
@@ -30,7 +37,7 @@ export const fetchRandomMovies = async (page = 1) => {
 export const fetchGenres = async () => {
   try {
     const response = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}`)
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data.genres
   } catch (error) {
     console.error('Error fetching genres:', error)
@@ -41,7 +48,7 @@ export const fetchGenres = async () => {
 export const createGuestSession = async () => {
   try {
     const response = await fetch(`${BASE_URL}/authentication/guest_session/new?api_key=${API_KEY}`)
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data.guest_session_id
   } catch (error) {
     console.error('Error creating guest session:', error)
@@ -61,7 +68,7 @@ export const rateMovie = async (movieId, rating, guestSessionId) => {
         body: JSON.stringify({ value: rating }),
       }
     )
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data
   } catch (error) {
     console.error('Error rating movie:', error)
@@ -72,7 +79,7 @@ export const rateMovie = async (movieId, rating, guestSessionId) => {
 export const fetchMovieDetails = async (movieId) => {
   try {
     const response = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`)
-    const data = await response.json()
+    const data = await checkStatus(response)
     return data
   } catch (error) {
     console.error('Error fetching movie details:', error)
