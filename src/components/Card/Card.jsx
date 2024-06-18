@@ -37,34 +37,9 @@ export default class Card extends Component {
     }
   }
 
-  renderStars() {
-    const { userRating } = this.state
-    return (
-      <div className="card-stars">
-        {[...Array(10)].map((_, index) => (
-          <span
-            key={index}
-            className={`star ${index < userRating ? 'filled' : ''}`}
-            onClick={() => this.handleStarClick(index)}
-          >
-            &#9733;
-          </span>
-        ))}
-      </div>
-    )
-  }
-
-  renderGenres(genres) {
-    return genres.map((genre, index) => (
-      <span key={`${genre}-${index}`} className="genre">
-        {genre}
-      </span>
-    ))
-  }
-
   render() {
     const { title, date, genres, description, rating, image } = this.props
-    const { error } = this.state
+    const { error, userRating } = this.state
     const imageUrl = image !== 'N/A' ? image : defaultImage
     const truncatedDescription = truncateText(description, 150)
     const ratingClass = this.getRatingClass(rating)
@@ -76,12 +51,28 @@ export default class Card extends Component {
         <div className="card-content">
           <h3 className="card-title">{title}</h3>
           <p className="card-date">{date}</p>
-          <div className="card-genres">{this.renderGenres(genres)}</div>
+          <div className="card-genres">
+            {genres.map((genre, index) => (
+              <span key={`${genre}-${index}`} className="genre">
+                {genre}
+              </span>
+            ))}
+          </div>
           <p className="card-description">{truncatedDescription}</p>
           <div className={`card-rating ${ratingClass}`}>
             <span className="rating-number">{rating}</span>
           </div>
-          {this.renderStars()}
+          <div className="card-stars">
+            {[...Array(10)].map((_, index) => (
+              <span
+                key={index}
+                className={`star ${index < userRating ? 'filled' : ''}`}
+                onClick={() => this.handleStarClick(index)}
+              >
+                &#9733;
+              </span>
+            ))}
+          </div>
         </div>
       </div>
     )

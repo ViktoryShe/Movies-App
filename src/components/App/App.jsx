@@ -27,8 +27,10 @@ export default class App extends Component {
 
   componentDidMount() {
     const storedGuestSessionId = localStorage.getItem('guestSessionId')
+    const storedRatedMovies = JSON.parse(localStorage.getItem('ratedMovies')) || []
+
     if (storedGuestSessionId) {
-      this.setState({ guestSessionId: storedGuestSessionId }, this.loadRandomMovies)
+      this.setState({ guestSessionId: storedGuestSessionId, ratedMovies: storedRatedMovies }, this.loadRandomMovies)
     } else {
       this.createGuestSession()
     }
@@ -50,8 +52,14 @@ export default class App extends Component {
     this.setLoading(true)
     try {
       const { results, total_results } = await fetchRandomMovies(page)
+      const storedRatedMovies = JSON.parse(localStorage.getItem('ratedMovies')) || []
+      const updatedResults = results.map((movie) => {
+        const ratedMovie = storedRatedMovies.find((rated) => rated.movieId === movie.id)
+        return ratedMovie ? { ...movie, rating: ratedMovie.rating } : movie
+      })
+
       this.setState({
-        films: results,
+        films: updatedResults,
         loading: false,
         totalResults: total_results,
         currentPage: page,
@@ -84,10 +92,15 @@ export default class App extends Component {
   rateMovieHandler = async (movieId, rating) => {
     try {
       await rateMovie(movieId, rating, this.state.guestSessionId)
-      this.setState((prevState) => ({
-        ratedMovies: [...prevState.ratedMovies, { movieId, rating }],
-        ratedTotalPages: Math.ceil((prevState.ratedMovies.length + 1) / 20),
-      }))
+      this.setState((prevState) => {
+        const updatedRatedMovies = prevState.ratedMovies.filter((movie) => movie.movieId !== movieId)
+        updatedRatedMovies.push({ movieId, rating })
+        localStorage.setItem('ratedMovies', JSON.stringify(updatedRatedMovies))
+        return {
+          ratedMovies: updatedRatedMovies,
+          ratedTotalPages: Math.ceil(updatedRatedMovies.length / 20),
+        }
+      })
     } catch (error) {
       this.setError(error.message)
     }
@@ -145,12 +158,11 @@ export default class App extends Component {
     const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated, error } = this.state
     const totalPages = Math.ceil(totalResults / 20)
     const ratedTotalPages = Math.ceil(ratedMovies.length / 20)
-
     return (
       <div className="App">
         <Header onSearch={this.onSearch} onTabChange={this.handleTabChange} activeTab={activeTab} />
         <Offline>
-          <AlertMessage message="Нет соединения" description="Проверьте интернет-соединение" type="warning" />
+          {error && <AlertMessage message="Ошибка" description={this.state.errorMessage} type="error" />}
         </Offline>
         <Online>
           {error}
