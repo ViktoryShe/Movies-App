@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { Offline, Online } from 'react-detect-offline'
+import { Offline } from 'react-detect-offline'
 import debounce from 'lodash.debounce'
 import './App.css'
 
@@ -23,6 +23,7 @@ export default class App extends Component {
     ratedMovies: [],
     currentPageRated: 1,
     ratedTotalPages: 1,
+    isConnected: true,
   }
 
   componentDidMount() {
@@ -168,30 +169,31 @@ export default class App extends Component {
     this.setState({ error: true, loading: false, errorMessage: message })
   }
 
+  handleConnectivityChange = (isConnected) => {
+    this.setState({ isConnected })
+  }
+
   render() {
-    const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated, error } = this.state
+    const { currentPage, totalResults, activeTab, ratedMovies, currentPageRated, isConnected } = this.state
     const totalPages = Math.ceil(totalResults / 20)
     const ratedTotalPages = Math.ceil(ratedMovies.length / 20)
     return (
       <div className="App">
         <Header onSearch={this.onSearch} onTabChange={this.handleTabChange} activeTab={activeTab} />
-        <Offline>
-          {error && <AlertMessage message="Ошибка" description={this.state.errorMessage} type="error" />}
+        <Offline onChange={this.handleConnectivityChange}>
+          {!isConnected && <AlertMessage message="Ошибка" description="Нет соединения с интернетом" type="error" />}
         </Offline>
-        <Online>
-          {error}
-          <Content
-            films={this.state.films}
-            loading={this.state.loading}
-            error={this.state.error}
-            activeTab={this.state.activeTab}
-            ratedMovies={this.state.ratedMovies}
-            currentPageRated={this.state.currentPageRated}
-            ratedTotalPages={this.state.ratedTotalPages}
-            guestSessionId={this.state.guestSessionId}
-            handleStarClick={this.handleStarClick}
-          />
-        </Online>
+        <Content
+          films={this.state.films}
+          loading={this.state.loading}
+          error={this.state.error}
+          activeTab={this.state.activeTab}
+          ratedMovies={this.state.ratedMovies}
+          currentPageRated={this.state.currentPageRated}
+          ratedTotalPages={this.state.ratedTotalPages}
+          guestSessionId={this.state.guestSessionId}
+          handleStarClick={this.handleStarClick}
+        />
         {activeTab === 'search' ? (
           <Footer currentPage={currentPage} totalPages={totalPages} onPageChange={this.onPageChange} />
         ) : (
