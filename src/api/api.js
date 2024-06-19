@@ -51,6 +51,15 @@ export const rateMovie = async (movieId, rating, guestSessionId) => {
   return data
 }
 
+export const fetchRatedMovies = async (guestSessionId) => {
+  const response = await fetch(`${BASE_URL}/guest_session/${guestSessionId}/rated/movies?api_key=${API_KEY}`)
+  const data = await checkStatus(response)
+  return data.results.map((movie) => ({
+    movieId: movie.id,
+    rating: movie.rating,
+  }))
+}
+
 export const fetchMovieDetails = async (movieId) => {
   const response = await fetch(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`)
   const data = await checkStatus(response)

@@ -5,7 +5,7 @@ import './App.css'
 
 import Header from '../Header/Header'
 import Footer from '../Footer/Footer'
-import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie } from '../../api/api'
+import { fetchMovies, fetchRandomMovies, createGuestSession, rateMovie, fetchRatedMovies } from '../../api/api'
 import AlertMessage from '../AlertMessage/AlertMessage'
 import Content from '../Content/Content'
 
@@ -26,23 +26,39 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    const storedGuestSessionId = localStorage.getItem('guestSessionId')
-    const storedRatedMovies = JSON.parse(localStorage.getItem('ratedMovies')) || []
+    this.initializeGuestSession()
+  }
 
-    if (storedGuestSessionId) {
-      this.setState({ guestSessionId: storedGuestSessionId, ratedMovies: storedRatedMovies }, this.loadRandomMovies)
-    } else {
-      this.createGuestSession()
+  initializeGuestSession = async () => {
+    const urlParams = new URLSearchParams(window.location.search)
+    let guestSessionId = urlParams.get('guestSessionId')
+    if (!guestSessionId) {
+      guestSessionId = await this.createGuestSession()
+      const url = new URL(window.location.href)
+      url.searchParams.set('guestSessionId', guestSessionId)
+      window.history.pushState({}, '', url)
     }
+    this.setState({ guestSessionId }, this.loadInitialData)
   }
 
   createGuestSession = async () => {
     try {
       const guestSessionId = await createGuestSession()
-      const url = new URL(window.location.href)
-      url.searchParams.set('guestSessionId', guestSessionId)
-      localStorage.setItem('guestSessionId', guestSessionId)
-      this.setState({ guestSessionId }, this.loadRandomMovies)
+      return guestSessionId
+    } catch (error) {
+      this.setError(error.message)
+    }
+  }
+
+  loadInitialData = async () => {
+    await this.loadRatedMovies()
+    this.loadRandomMovies()
+  }
+
+  loadRatedMovies = async () => {
+    try {
+      const ratedMovies = await fetchRatedMovies(this.state.guestSessionId)
+      this.setState({ ratedMovies })
     } catch (error) {
       this.setError(error.message)
     }
@@ -52,9 +68,8 @@ export default class App extends Component {
     this.setLoading(true)
     try {
       const { results, total_results } = await fetchRandomMovies(page)
-      const storedRatedMovies = JSON.parse(localStorage.getItem('ratedMovies')) || []
       const updatedResults = results.map((movie) => {
-        const ratedMovie = storedRatedMovies.find((rated) => rated.movieId === movie.id)
+        const ratedMovie = this.state.ratedMovies.find((rated) => rated.movieId === movie.id)
         return ratedMovie ? { ...movie, rating: ratedMovie.rating } : movie
       })
 
@@ -95,7 +110,6 @@ export default class App extends Component {
       this.setState((prevState) => {
         const updatedRatedMovies = prevState.ratedMovies.filter((movie) => movie.movieId !== movieId)
         updatedRatedMovies.push({ movieId, rating })
-        localStorage.setItem('ratedMovies', JSON.stringify(updatedRatedMovies))
         return {
           ratedMovies: updatedRatedMovies,
           ratedTotalPages: Math.ceil(updatedRatedMovies.length / 20),
