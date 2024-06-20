@@ -27,25 +27,20 @@ export default class App extends Component {
   }
 
   componentDidMount() {
-    this.initializeGuestSession()
+    const storedGuestSessionId = localStorage.getItem('guestSessionId')
+
+    if (storedGuestSessionId) {
+      this.setState({ guestSessionId: storedGuestSessionId }, this.loadInitialData)
+    } else {
+      this.initializeGuestSession()
+    }
   }
 
   initializeGuestSession = async () => {
-    const urlParams = new URLSearchParams(window.location.search)
-    let guestSessionId = urlParams.get('guestSessionId')
-    if (!guestSessionId) {
-      guestSessionId = await this.createGuestSession()
-      const url = new URL(window.location.href)
-      url.searchParams.set('guestSessionId', guestSessionId)
-      window.history.pushState({}, '', url)
-    }
-    this.setState({ guestSessionId }, this.loadInitialData)
-  }
-
-  createGuestSession = async () => {
     try {
       const guestSessionId = await createGuestSession()
-      return guestSessionId
+      localStorage.setItem('guestSessionId', guestSessionId)
+      this.setState({ guestSessionId }, this.loadInitialData)
     } catch (error) {
       this.setError(error.message)
     }
